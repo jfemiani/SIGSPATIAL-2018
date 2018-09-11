@@ -11,15 +11,19 @@
 
 
 Aerial imagery is an important resource for applications that include urban planning and map-making. 
-Ribbon-like features such as sidewalks, street networks, canals, or biking paths are especially important because they provide essential connections between sites to support transportation of people and materials.
+Linear features such as sidewalks, street networks, canals, or biking paths are especially important because they provide essential connections between sites to support transportation of people and materials.
 High-resolution aerial imagery has become a way to capture the appearance of these structures in order to look for changes such as new construction, damage, or obstructions. 
-Geometrically, walking paths are thin features that can be described by a trajectory with varying thickness.
-The scope of this paper is automatic refinement of ribbon-like features: given an approximate trajectory and a range of potential thicknesses, we automate the process of estimating the thicknesses and  trajectory. 
+
+A \textit{ribbon-like} feature is a linear feature with varying thickness.
+The scope of this paper is automatic refinement of previously digitized ribbon-like features, specifically walking paths, based on \ac{VHR} aerial imagery.
+Given an approximate trajectory for the midline, and a range of potential thicknesses, we automate the process of estimating the most likely thicknesses and  trajectory of a path. 
 One example of a downstream application would be an automatic method for precise localization and assessment of the quality of these pathways from geometric referenced imagery. 
 
 Public domain or crowd-sourced repositories of spatial data such as \ac{OSM} \cite{OpenStreetMap} represent a very complete and frequently updated source of information which includes street vector data, and to a much lesser extent, the locations of foot-ways. 
 However, the data is acquired from a variety of sources that may not be registered with enough precision to accurately place ribbon-like features. 
-For thin structures such as sidewalks that are visible in \ac{VHR} imagery, even small discrepancies between the digitized pathways and the imagery can be distracting when used to visualize an \replaced{overland}{overlaid} map.  
+For thin structures such as sidewalks that are visible in \ac{VHR} imagery, even small discrepancies 
+between the digitized pathways and the imagery can be distracting when used to visualize an overlaid 
+map.  
 As new \ac{VHR} aerial imagery becomes available thin features such as walking paths are discernible with higher precision,  but ortho-rectification processes may not precisely align the imagery with previously digitized features. 
 In addition, poorly registered walking paths could confound any algorithm that might hope to automatically locate features on the path including obstacles, damage, overgrowth, or stairways that could impact the walk-ability. 
 Several authors \cite{femiani2009interval, femiani2007road} have worked on segmenting streets directly from aerial imagery; however sidewalks are much thinner than streets and are often partially occluded. 
@@ -28,10 +32,16 @@ Our approach could be used to refine or recover the thickness of street networks
 
 Several automatic approaches \cite{ActiveContou09, Rother2004-ou, Achanta2012-ah} for image segmentation are able to locate precise object boundaries, especially for ``blobby" or compact regions.  
 The \ac{SLIC} algorithm for super-pixels \cite{Achanta2012-ah} uses compact evenly distributed homogeneous regions of an image as a pre-processing step, so that image segmentation can be accomplished by grouping super-pixels which  snap to natural boundaries in an image. 
-Alternatively, super-pixels can initiate a region growing process \cite{Borovec2017-fz}. A very successful region growing process is snakes, or \ActiveContours{}, \cite{ActiveContou09}, which starts with an approximate  contour and evolves the boundary to optimize an energy function that favors likely contour shapes. 
-Both \ac{SLIC} and active contours start from an initial shape to find precise boundaries by solving a \ac{CRF} problem. 
+Alternatively, super-pixels can initiate a region growing process \cite{Borovec2017-fz}. A very 
+successful region growing process is snakes, or \ActiveContours{}, \cite{ActiveContou09}, which starts 
+with an approximate  contour and evolves the boundary to om an initial shape to find precise 
+boundaries by solving a \ac{CRF} problem. 
 In addition, graph cuts are capable of global \ac{CRF} optimization in some situations, and iterative graph cuts are used by the \GrabCut{} algorithm to refine an initial segmentation \cite{Rother2004-ou}.
-However in \figref{fig:Method_comparison} we show the segmentation results of these methods, and note that  they struggle to constrain their results to ribbon-like shapes with smooth thickness and mid-line.
+However in \figref{fig:Method_comparison}optimize an energy function that favors likely contour 
+shapes. 
+Both \ac{SLIC} and active contours start fr we show the segmentation results of these methods, and 
+note that  they struggle to constrain their results to ribbon-like shapes with smooth thickness and 
+mid-line.
 These color or boundary smoothness methods fail to capture an important quality of ribbon-like features, which is the thickness at one point depends not only on its adjacent points but also its topologically distant points along the contour.
 
 \begin{figure}[tb]
@@ -51,7 +61,22 @@ These color or boundary smoothness methods fail to capture an important quality 
 
 % tunable is a word: https://www.merriam-webster.com/dictionary/tunable
 
-Another image segmentation approach that has seen extraordinary success is the use of \acp{CNN} and transposed convolution \cite{Ronneberger2015-sv, Shelhamer2017-rf, Noh2015-ni, Badrinarayanan2017-il}. Unlike the proposed approach, these have millions of tunable parameters and need significant pre-annotated data and offline training to build a model. In a recent exploration of learning to segment street networks from online maps, \cite{Kaiser2017-np} built a fully convolutional network with 137 million parameters. A similar approach with another deep architecture called U-net \cite{Ronneberger2015-sv} was applied to the street network segmentation problem \cite{Zhang2017-gi}. These approaches claim to be robust to occlusion and ambiguous regions, but they benefit from a large amount of carefully annotated data that includes road width \cite{Mnih2013-dp}. This type of pre-annotated data with aligned aerial imagery is much harder to obtain for walking paths.  The proposed approach has only a handful of tunable parameters with clear interpretations, so that they can be interactively set and used without offline training.
+%Another image segmentation approach that has seen extraordinary success is the
+%use of \acp{CNN} and transposed convolution \cite{Ronneberger2015-sv,
+%Shelhamer2017-rf, Noh2015-ni, Badrinarayanan2017-il}. Unlike the proposed
+%approach, these have millions of tunable parameters and need significant
+%pre-annotated data and offline training to build a model. In a recent
+%exploration of learning to segment street networks from online maps,
+%\cite{Kaiser2017-np} built a fully convolutional network with 137 million
+%parameters. A similar approach with another deep architecture called U-net
+%\cite{Ronneberger2015-sv} was applied to the street network segmentation
+%problem \cite{Zhang2017-gi}. These approaches claim to be robust to occlusion
+%and ambiguous regions, but they benefit from a large amount of carefully
+%annotated data that includes road width \cite{Mnih2013-dp}. This type of
+%pre-annotated data with aligned aerial imagery is much harder to obtain for
+%walking paths.  The proposed approach has only a handful of tunable parameters
+%with clear interpretations, so that they can be interactively set and used
+%without offline training.
 
 The main challenge addressed by our approach is to predict precise boundaries for ribbon-like walking paths when they are:
 \begin{itemize}
@@ -62,13 +87,19 @@ The main challenge addressed by our approach is to predict precise boundaries fo
 \end{itemize}
 Under these circumstances, most feature segmenting tools will not able to locate accurate boundaries. 
 
-To illustrate this challenge we look at the example of using \ac{SLIC} to segment the image in \figref{fig:slic}. In regions where shadows exist, the \ac{SLIC} superpixels snap to shadow boundaries instead of the target boundaries. 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.95\columnwidth]{Figures/slic_sample1.pdf}
-    \caption[Example of Simple Linear Iterative Clustering]{Detail demonstration on segmenting large image into irregularly shaped super-pixels with \ac{SLIC}. Row 2 indicates examples of false positive, which recognized a non-sidewalk feature (shadow) as a part of sidewalk.}
-    \label{fig:slic}
-\end{figure}
+%To illustrate this challenge we look at the example of using \ac{SLIC} to
+%segment the image in \figref{fig:slic}. In regions where shadows exist, the
+%\ac{SLIC} superpixels snap to shadow boundaries instead of the target
+%boundaries. 
+%\begin{figure}
+%    \centering
+%    \includegraphics[width=0.95\columnwidth]{Figures/slic_sample1.pdf}
+%    \caption[Example of Simple Linear Iterative Clustering]{Detail
+%demonstration on segmenting large image into irregularly shaped super-pixels
+%with \ac{SLIC}. Row 2 indicates examples of false positive, which recognized a
+%non-sidewalk feature (shadow) as a part of sidewalk.}
+%    \label{fig:slic}
+%\end{figure}
 
 
 \subsection{Contributions}
@@ -88,21 +119,22 @@ Our contributions are as follows:
 
 \section{Approach} \label{sec:approach}
 
-The main steps of our approach are illustrated in \figref{fig:Apparatus}; a \ac{VHR} orthorectified image is provided and \replaced{}{a} the approximate trajectory of a sidewalk is acquired from a \ac{GIS} such as \ac{OSM}. Alternately, an approximate trajectory could be marked by a person to digitize the sidewalk quickly. The initial trajectory is re-sampled and used to warp a portion of aerial image so that the trajectory is mapped to a straight, horizontal line which we call a \textit{ribbon image}.  We use a modest assumption that colors near the center of the ribbon image are more likely to be on a walking path in order to build a probability-density estimate for walking path materials. Based on the probability estimate at each pixel, we construct a single ribbon with priors that control the rate of change of thickness and direction of the ribbon. Finally, the boundaries are warped back onto the original reference frame. In this section we elaborate the process of generating a ribbon image, estimating the probability that a color belongs to the same material as a walking path, and the construction of a smooth ribbon image based on the resulting probabilities. 
+The main steps of our approach are illustrated in \figref{fig:Apparatus}; a \ac{VHR} orthorectified image is provided and the approximate trajectory of a sidewalk is acquired from a \ac{GIS} such as \ac{OSM}. Alternately, an approximate trajectory could be marked by a person to digitize the sidewalk quickly. The initial trajectory is re-sampled and used to warp a portion of aerial image so that the trajectory is mapped to a straight, horizontal line which we call a \textit{ribbon image}.  We use a modest assumption that colors near the center of the ribbon image are more likely to be on a walking path in order to build a probability-density estimate for walking path materials. Based on the probability estimate at each pixel, we construct a single ribbon with priors that control the rate of change of thickness and direction of the ribbon. Finally, the boundaries are warped back onto the original reference frame. In this section we elaborate the process of generating a ribbon image, estimating the probability that a color belongs to the same material as a walking path, and the construction of a smooth ribbon image based on the resulting probabilities. 
 
 
 
 \subsection{Warping an input image}
 
-We take as input an image $\InputImage{}$ and a trajectory $\InputTrajectory{}=\langle \vec{p}_0, \vec{p}_1,\dots,\vec{p}_m\rangle$ where each $\vec{p}_i=(x_i, y_i)^T$ is a point on the initial estimate of a ribbons trajectory (re-sampled and smoothed). Further, we are able to estimate unit-length tangent vectors $\vec{u}_i$ and their perpendiculars $\vec{v}_i$; for example by using the secant method 
-\begin{align}
-  \vec{u}_i &= \frac{\vec{p}_{i+1}-\vec{p}_{i-1}}{\|\vec{p}_{i+1}-\vec{p}_{i-1}\|} \\
-  \vec{v}_i &= \left(\begin{array}{cc}
-       0  & 1 \\
-       -1 & 0
-  \end{array} \right) \vec{u}_i
-\end{align}
-where the endpoints are repeated. We define the warped ribbon-image $\RibbonImage{}$ so that $\RibbonImage{[i,j]}=\InputImage{}(\vec{p}_i+ j \vec{v}_i)$. We use the convention that square-brackets to indicate discrete indices and rounded parenthesis indicate interpolated samples.  An example of the process is shown in \figref{fig:Sample_Sidewalk_4} and \figref{fig:Apparatus}(c). 
+We take as input an image $\InputImage{}$ and a trajectory $\InputTrajectory{}=\langle \vec{p}_0, \vec{p}_1,\dots,\vec{p}_m\rangle$ where each $\vec{p}_i=(x_i, y_i)^T$ is a point on the initial estimate of a ribbons trajectory (re-sampled to match the image resolution and smoothed). Further, we are able to estimate unit-length tangent vectors $\vec{u}_i$ and their perpendiculars $\vec{v}_i$; for example by using the secant method. 
+%\begin{align}
+%  \vec{u}_i &= \frac{\vec{p}_{i+1}-\vec{p}_{i-1}}{\|\vec{p}_{i+1}-\vec{p}_{i-1}\|} \\
+%  \vec{v}_i &= \left(\begin{array}{cc}
+%       0  & 1 \\
+%       -1 & 0
+%  \end{array} \right) \vec{u}_i
+%\end{align}
+%where the endpoints are repeated
+We define the warped ribbon-image $\RibbonImage{}$ so that $\RibbonImage{[i,j]}=\InputImage{}(\vec{p}_i+ j \vec{v}_i)$. We use the convention that square-brackets to indicate discrete indices and rounded parenthesis indicate interpolated samples.  An example of the process is shown in \figref{fig:Sample_Sidewalk_4} and \figref{fig:Apparatus}(c). 
 
 % \begin{figure}[ht]
 %     \centering
@@ -135,20 +167,31 @@ In figure \ref{fig:ribbon_3d} these regions correspond to strips of pixels in $\
 %     \label{fig:2d_ribbon}
 % \end{figure}
 
-We use the \replaced{\ac{EM-GMM}}{GMM} algorithm to find a max-likelihood estimate of $\theta$ as a pair of Gaussian mixtures so that $\Pr(\phi|\text{pos}, \theta)$ is a mixture of four multivariate Gaussian functions and $\Pr(\phi|\text{neg}, \theta)$ is a mixture of eight; then $\Pr(\text{pos}|\phi, \theta)$ can easily be found using Bayes theorem as 
+We use the \ac{EM-GMM} algorithm to find a max-likelihood estimate of $\theta$ as a pair of Gaussian mixtures so that $\Pr(\phi|\text{pos}, \theta)$ is a mixture of four multivariate Gaussian functions and $\Pr(\phi|\text{neg}, \theta)$ is a mixture of eight; then $\Pr(\text{pos}|\phi, \theta)$ can easily be found using Bayes theorem as 
 $$\Pr(\text{pos}|\phi, \theta)= \frac{\Pr(\phi|\text{pos}, \theta)}{\Pr(\phi|\text{pos}, \theta)+\Pr(\phi|\text{neg}, \theta)}.$$
 
 
-\begin{figure}[htb]
-    \centering
-    \includegraphics[width=0.95\columnwidth]{Figures/GMM_needed.pdf}
-    \caption[\ac{GMM} Result]{Example of probability density estimation for a sample sidewalk estimated as a pair of \acp{GMM} for positive (top) and negative (bottom) colors.}
-    \label{fig:GMM_result}
-\end{figure}
+%\begin{figure}[htb]
+%    \centering
+%    \includegraphics[width=0.95\columnwidth]{Figures/GMM_needed.pdf}
+%    \caption[\ac{GMM} Result]{Example of probability density estimation for a sample sidewalk estimated as a pair of \acp{GMM} for positive (top) and negative (bottom) colors.}
+%    \label{fig:GMM_result}
+%\end{figure}
 
 \FloatBarrier
 
-The resulting probabilities are illustrated in \figref{fig:GMM_result}; we observe that even a coarse initial trajectory is usually enough to learn a more detailed, but noisy, estimate for the foreground object shape. However colors alone are not able to discriminate between occlusion and camouflage regions (such as the driveway in \figref{fig:GMM_result}). For rotational convenience we let $p[i,j]=-\lg \Pr(\text{pos}|\RibbonImage{}[i,j], \theta)$ and $q[i,j]=-\lg \Pr(\text{neg}|\RibbonImage{}[i,j], \theta)$; then the \ac{NLL} of a ribbon is proportional to a sum of $p[i,j]$ for all $i,j$ within the ribbon and $q[i,j]$ for all $i,j$ outside the ribbon. The aim of our \ac{DP} solution is to simultaneously optimize the probability based on color and shape of a ribbon-like feature. 
+The resulting probabilities are illustrated in
+\figname{}~\ref{fig:Apparatus}(d); we observe that even a coarse initial
+trajectory is usually enough to learn a more detailed, but noisy, estimate for
+the foreground object shape. However colors alone are not able to discriminate
+between occlusion and camouflage regions (such as the driveway in
+\figname{}~\ref{fig:Apparatus}). For notational convenience we let
+$p[i,j]=-\lg \Pr(\text{pos}|\RibbonImage{}[i,j], \theta)$ and 
+$q[i,j]=-\lg \Pr(\text{neg}|\RibbonImage{}[i,j], \theta)$;
+then the \ac{NLL} of a ribbon is proportional to a sum of $p[i,j]$ for all
+$i,j$ within the ribbon and $q[i,j]$ for all $i,j$ outside the ribbon. The aim
+of our \ac{DP} solution is to simultaneously optimize the probability based on
+color and shape of a ribbon-like feature. 
 
 
 \subsection{A Dynamic Programming Algorithm}
@@ -160,13 +203,29 @@ The resulting probabilities are illustrated in \figref{fig:GMM_result}; we obser
     \label{fig:ribbon_3d}
 \end{figure}
 
-We take $\RibbonImage{}$ as an input ribbon image with $m$ rows and $n=2\MaxDistance+1$ columns; $\RibbonImage{}{[i,j]}$ is a pixel in the image. We have an estimate $\Pr(\text{pos}|\RibbonImage{}_{[i,j]}, \theta)$ which we abbreviate as $p_{[i,j]})$. In addition there is some small set of allowed perturbations $\delta=\{(\delta_j, \delta_k)\}$ where $\delta_j$ is a change in direction and $\delta_k$ is a change in the radius of the ribbon. Each perturbation has a probability $\Pr(\delta_j, \delta_k)$ that controls the shape of the curve; in our experiments we use $\delta_j\in\{-1,0,1\}, \delta_k\in\{-1, 0,1\}$ in order to ensure that results are connected, and  $\Pr(\delta_j, \delta_k)=\Pr(|\delta_j|)\Pr(\delta_k)$ is two independent multinomial distributions which require only three parameters due to symmetry and because probabilities sum to unity. We can interpret $c_\mathit{bend}=-\lg \Pr(\delta_j=\pm1)$ as a penalty for bending the curve, and $c_\mathit{shrink}=-\lg \Pr(\delta_k=-1)$ as a penalty for shrinking the radius, or $c_\mathit{expand} = -\lg \Pr(\delta_k=1)$ as a penalty for expanding the radius of the curve. 
+We take $\RibbonImage{}$ as an input ribbon image with $m$ rows and $n=2\MaxDistance+1$ columns; $\RibbonImage{}{[i,j]}$ is a pixel in the image. We have an estimate $\Pr(\text{pos}|\RibbonImage{}_{[i,j]}, \theta)$ which we abbreviate as $p_{[i,j]})$. In addition there is some small set of allowed perturbations $\delta=\{(\delta_j, \delta_k)\}$ where $\delta_j$ is a change in direction and $\delta_k$ is a change in the radius of the ribbon. Each perturbation has a probability $\Pr(\delta_j, \delta_k)$ that controls the shape of the curve; in our experiments we use $\delta_j\in\{-1,0,1\}, \delta_k\in\{-1, 0,1\}$ in order to ensure that results are connected, and  $\Pr(\delta_j, \delta_k)=\Pr(|\delta_j|)\Pr(\delta_k)$ is two independent multinomial distributions which require only three parameters due to symmetry and because probabilities sum to unity. We can interpret $c_b=-\lg \Pr(\delta_j=\pm1)$ as a penalty for bending the curve, and $c_s=-\lg \Pr(\delta_k=-1)$ as a penalty for shrinking the radius, or $c_e = -\lg \Pr(\delta_k=1)$ as a penalty for expanding the radius of the curve. 
 
-We visualize the problem of finding a ribbon as one of choosing a three-dimensional path through a scale-space where the first two dimensions represent locations of the ribbon's center, and the third dimension represent the thickness of the ribbon as illustrated in \figref{fig:ribbon_3d}. Every ribbon must start at one end of the image and follow a three-dimensional path through scale-space to reach the other end one slice at a time. Each slice corresponds to a row of the ribbon image and a point at location $(j, k)$ in the slice partitions the row into negative regions $(0\twodots{}j-k-1)$ and $(j+k+1\twodots{}n)$ with a positive region at $(j-k \twodots{} j+k)$ with thickness $2k+1$. The likelihood of any location $(j, k)$ is the product of the probabilities that each pixel on the same row belongs to the corresponding positive or negative regions.  In fact the probability is exponentially related to the size of each pixel; if one were to increase the resolution by a factor of $r$ then the contribution of each pixel would be raised to the power of $\frac{1}{r}$ so that the product would stay constant. In order to make our parameters invariant to scale, we divide the \ac{NLL} by $\MaxDistance{}$ when estimating the likelihood of a given $(j,k)$. 
+We visualize the problem of finding a ribbon as one of choosing a
+three-dimensional path through a scale-space where the first two dimensions
+represent locations of the ribbon's center, and the third dimension represents
+the thickness of the ribbon as illustrated in \figref{fig:ribbon_3d}. Every
+ribbon must start at one end of the image and follow a three-dimensional path
+through scale-space to reach the other end one slice at a time. Each slice
+corresponds to a row of the ribbon image and a point at location $(j, k)$ in the
+slice partitions the row into negative regions $(0\twodots{}j-k-1)$ and
+$(j+k+1\twodots{}n)$ with a positive region at $(j-k \twodots{} j+k)$ with
+thickness $2k+1$. The likelihood of any location $(j, k)$ is the product of the
+probabilities that each pixel on the same row belongs to the corresponding
+positive or negative regions.  In fact the probability is exponentially related
+to the size of each pixel; if one were to increase the resolution by a factor of
+$r$ then the contribution of each pixel would be raised to the power of
+$\frac{1}{r}$ so that the product would stay constant. In order to make our
+parameters invariant to scale, we divide the \ac{NLL} by $\MaxDistance{}$ when
+estimating the likelihood of a given $(j,k)$. 
 
 We model the probability of a ribbon as the product of the probability of each location $(i, j, k)$ along the path times the probability of each edge from slice $i$ to slice $i+1$. We use dynamic programming to search to a path that minimizes the \ac{NLL} (the cost) of a path in procedure \proc{Segment-Ribbon}.
 
-The pseudocode can be interpreted as follows: Line \ref{li:loop-slices} iterates through each slice of the ribbon image. Line \ref{li:loop-radius} iterates through all possible radii and line \ref{li:loop-center} explores all possible ribbon-centers from left to right. We use a variable $s$ to calculate \ac{NLL} of a set of regions as the ribbon shifts from left to right. If this is not the first slice, then line \ref{li:min-from-pred} selects the least-expensive (most probable) path that leads to location $(i, j, k)$ in the scale space.  At each step on pixel toggles from negative to positive, and one toggles from positive to negative as $s$ is updated in line \ref{li:update-s}.  We return the costs as well as the final offset and scale $(j^*, k^*)$ of the best path. 
+The pseudocode can be interpreted as follows: Line \ref{li:loop-slices} iterates through each slice of the ribbon image. Line \ref{li:loop-radius} iterates through all possible radii and line \ref{li:loop-center} explores all possible ribbon-centers from left to right. We use a variable $s$ to calculate the \ac{NLL} of a set of regions as the ribbon shifts from left to right. If this is not the first slice, then line \ref{li:min-from-pred} selects the least-expensive (most probable) path that leads to location $(i, j, k)$ in the scale space.  At each step one pixel toggles from negative to positive, and one toggles from positive to negative as $s$ is updated in line \ref{li:update-s}.  We return the costs as well as the final offset and scale $(j^*, k^*)$ of the best path. 
 
 
 \begin{codebox}
@@ -219,16 +278,17 @@ If one wishes the path to be connected in scale-space, then there are only $3\ti
 
 \section{Results}
 
-We evaluate our results using precision ($P$), recall ($R$) and the balanced F-measure ($F_1$) defined as follows:
-\begin{align}
-     P &= \frac{\mathit{TP}}{\mathit{TP} + \mathit{FP}}, & 
-     R &= \frac{\mathit{TP}}{\mathit{TP} + \mathit{FN}}, &    
-     F_1 &= \frac{2 P R}{P + R}
-\end{align}
-where 
-\acp{TP} is the number of pixels correctly marked as positive, 
-\acp{FN} is the number incorrectly marked as negative and 
-\acp{FP} is the number incorrectly marked as positive. 
+We evaluate our results using precision ($P$), recall ($R$) and the balanced F-measure ($F_1$).
+% defined as follows:
+%\begin{align}
+%     P &= \frac{\mathit{TP}}{\mathit{TP} + \mathit{FP}}, & 
+%     R &= \frac{\mathit{TP}}{\mathit{TP} + \mathit{FN}}, &    
+%     F_1 &= \frac{2 P R}{P + R}
+%\end{align}
+%where 
+%\acp{TP} is the number of pixels correctly marked as positive, 
+%\acp{FN} is the number incorrectly marked as negative and 
+%\acp{FP} is the number incorrectly marked as positive. 
 
 We compare our results against common segmentation approaches 
 \ac{SLIC}~\cite{Achanta2012-ah}, \ActiveContours{}~\cite{ActiveContou09} and \GrabCut{}~\cite{Rother2004-ou} 
